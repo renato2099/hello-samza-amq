@@ -19,6 +19,7 @@
 
 package samza.examples.amq.system;
 
+import org.apache.samza.system.SystemStreamPartition;
 import org.apache.samza.util.BlockingEnvelopeMap;
 
 /**
@@ -27,6 +28,14 @@ import org.apache.samza.util.BlockingEnvelopeMap;
 public class ActiveMQConsumer extends BlockingEnvelopeMap {
 
     public ActiveMQConsumer() {
+    }
+
+    @Override
+    public void register(SystemStreamPartition systemStreamPartition, String startingOffset) {
+        super.register(systemStreamPartition, startingOffset);
+        System.out.println("=========================");
+        System.out.println("ActiveMQConsumer" + systemStreamPartition);
+        System.out.println("=========================");
     }
 
     @Override

@@ -30,21 +30,28 @@ import org.apache.samza.util.SinglePartitionWithoutOffsetsSystemAdmin;
 import samza.examples.wikipedia.system.WikipediaConsumer;
 import samza.examples.wikipedia.system.WikipediaFeed;
 
+/**
+ * ActiveMQ factory
+ */
 public class ActiveMQSystemFactory implements SystemFactory {
+
   @Override
   public SystemAdmin getAdmin(String systemName, Config config) {
-    return new ActiveMQSystemAdmin(systemName, config);
+      System.out.println("------------------------------------");
+      System.out.println(systemName);
+      System.out.println("------------------------------------");
+      System.out.println(config);
+      System.out.println("------------------------------------");
+    return new ActiveMQSystemAdmin();
   }
 
   @Override
   public SystemConsumer getConsumer(String systemName, Config config, MetricsRegistry registry) {
-    String broker = config.get("systems." + systemName + ".broker");
-    int port = config.getInt("systems." + systemName + ".port", -1);
     return new ActiveMQConsumer();
   }
 
   @Override
   public SystemProducer getProducer(String systemName, Config config, MetricsRegistry registry) {
-    throw new SamzaException("You can't produce to a Wikipedia feed! How about making some edits to a Wiki, instead?");
+    return new ActiveMQProducer();
   }
 }

@@ -18,11 +18,13 @@
  */
 package samza.examples.amq.system;
 
+import org.apache.samza.Partition;
 import org.apache.samza.config.Config;
 import org.apache.samza.system.SystemAdmin;
 import org.apache.samza.system.SystemStreamMetadata;
 import org.apache.samza.system.SystemStreamPartition;
 
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 
@@ -31,8 +33,8 @@ import java.util.Set;
  */
 public class ActiveMQSystemAdmin implements SystemAdmin {
 
-    public ActiveMQSystemAdmin(String systemName, Config config) {
-    }
+    private static final SystemStreamMetadata.SystemStreamPartitionMetadata emptyMetadata =
+            new SystemStreamMetadata.SystemStreamPartitionMetadata(null, null, null);
 
     @Override
     public Map<SystemStreamPartition, String> getOffsetsAfter(Map<SystemStreamPartition, String> systemStreamPartitionStringMap) {
@@ -40,8 +42,21 @@ public class ActiveMQSystemAdmin implements SystemAdmin {
     }
 
     @Override
-    public Map<String, SystemStreamMetadata> getSystemStreamMetadata(Set<String> strings) {
-        return null;
+    public Map<String, SystemStreamMetadata> getSystemStreamMetadata(Set<String> queuesNames) {
+        Map<String, SystemStreamMetadata> metadata = new HashMap<String, SystemStreamMetadata>();
+        int partition = 0;
+        // mapping one queue to one partition
+        // TODO if different ActiveMQ topology used, can we do a more clever partition?
+        for (String queueName : queuesNames) {
+            System.out.println("****************************");
+            System.out.println(queueName);
+            System.out.println("****************************");
+            Map<Partition, SystemStreamMetadata.SystemStreamPartitionMetadata> partitionMeta = new HashMap<Partition, SystemStreamMetadata.SystemStreamPartitionMetadata>();
+            partitionMeta.put(new Partition(partition), emptyMetadata);
+            metadata.put(queueName, new SystemStreamMetadata(queueName, partitionMeta));
+            partition++;
+        }
+        return metadata;
     }
 
     @Override
