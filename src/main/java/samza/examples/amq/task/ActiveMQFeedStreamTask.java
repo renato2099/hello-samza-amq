@@ -16,6 +16,7 @@
  * specific language governing permissions and limitations
  * under the License.
  */
+
 package samza.examples.amq.task;
 
 import org.apache.samza.system.IncomingMessageEnvelope;
@@ -24,21 +25,20 @@ import org.apache.samza.system.SystemStream;
 import org.apache.samza.task.MessageCollector;
 import org.apache.samza.task.StreamTask;
 import org.apache.samza.task.TaskCoordinator;
+import samza.examples.wikipedia.system.WikipediaFeed.WikipediaFeedEvent;
 
-import java.nio.charset.Charset;
+import java.util.Map;
 
 /**
- * Task to write to an ActiveMQ queue.
+ * This task is very simple. All it does is take messages that it receives, and
+ * sends them to a Kafka topic called amq-raw.
  */
-public class AmqDataCreatorStreamTask implements StreamTask {
-    /**
-     * ActiveMQ endpoint where data will be written to.
-     */
-    private static final SystemStream OUTPUT_STREAM = new SystemStream("amq", "queue2");
+public class ActiveMQFeedStreamTask implements StreamTask {
+  private static final SystemStream OUTPUT_STREAM = new SystemStream("kafka", "amq-raw");
 
-    @Override
-    public void process(IncomingMessageEnvelope envelope, MessageCollector collector, TaskCoordinator taskCoordinator) throws Exception {
-        String msg = new String((byte[])envelope.getMessage(), Charset.forName("UTF-8")).replace("Data", "Pata");
-        collector.send(new OutgoingMessageEnvelope(OUTPUT_STREAM, envelope.getKey(), msg.getBytes()));
-    }
+  @Override
+  public void process(IncomingMessageEnvelope envelope, MessageCollector collector, TaskCoordinator coordinator) {
+    Map<String, Object> outgoingMap = WikipediaFeedEvent.toMap((WikipediaFeedEvent) envelope.getMessage());
+    collector.send(new OutgoingMessageEnvelope(OUTPUT_STREAM, outgoingMap));
+  }
 }

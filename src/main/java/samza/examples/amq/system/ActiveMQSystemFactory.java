@@ -30,19 +30,17 @@ import org.apache.samza.util.SinglePartitionWithoutOffsetsSystemAdmin;
 import samza.examples.wikipedia.system.WikipediaConsumer;
 import samza.examples.wikipedia.system.WikipediaFeed;
 
-public class AmqSystemFactory implements SystemFactory {
+public class ActiveMQSystemFactory implements SystemFactory {
   @Override
   public SystemAdmin getAdmin(String systemName, Config config) {
-    return new SinglePartitionWithoutOffsetsSystemAdmin();
+    return new ActiveMQSystemAdmin(systemName, config);
   }
 
   @Override
   public SystemConsumer getConsumer(String systemName, Config config, MetricsRegistry registry) {
-    String host = config.get("systems." + systemName + ".host");
-    int port = config.getInt("systems." + systemName + ".port");
-    WikipediaFeed feed = new WikipediaFeed(host, port);
-
-    return new AmqConsumer(systemName, feed, registry);
+    String broker = config.get("systems." + systemName + ".broker");
+    int port = config.getInt("systems." + systemName + ".port", -1);
+    return new ActiveMQConsumer();
   }
 
   @Override

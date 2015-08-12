@@ -16,17 +16,40 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-
 package samza.examples.amq.system;
 
 import org.apache.samza.config.Config;
-import org.apache.samza.system.IncomingMessageEnvelope;
-import org.apache.samza.system.SystemStreamPartition;
-import org.apache.samza.util.BlockingEnvelopeMap;
-import org.apache.samza.util.DaemonThreadFactory;
+import org.apache.samza.system.OutgoingMessageEnvelope;
+import org.apache.samza.system.SystemProducer;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
- * ActiveMQ consumer class
+ * ActiveMQ producer.
  */
-public class AmqConsumer extends BlockingEnvelopeMap {
+public class ActiveMQProducer implements SystemProducer {
+    @Override
+    public void start() {
+
+    }
+
+    @Override
+    public void stop() {
+
+    }
+
+    @Override
+    public void register(String s) {
+
+    }
+
+    @Override
+    public void send(String s, OutgoingMessageEnvelope outgoingMessageEnvelope) {
+
+    }
+
+    @Override
+    public void flush(String s) {
+
+    }
 }

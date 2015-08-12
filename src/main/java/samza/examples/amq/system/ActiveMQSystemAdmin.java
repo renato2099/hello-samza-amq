@@ -19,13 +19,33 @@
 package samza.examples.amq.system;
 
 import org.apache.samza.config.Config;
-import org.apache.samza.system.OutgoingMessageEnvelope;
-import org.apache.samza.system.SystemProducer;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.apache.samza.system.SystemAdmin;
+import org.apache.samza.system.SystemStreamMetadata;
+import org.apache.samza.system.SystemStreamPartition;
+
+import java.util.Map;
+import java.util.Set;
 
 /**
- * ActiveMQ producer.
+ * ActiveMQ System admin
  */
-public class AmqProducer implements SystemProducer {
+public class ActiveMQSystemAdmin implements SystemAdmin {
+
+    public ActiveMQSystemAdmin(String systemName, Config config) {
+    }
+
+    @Override
+    public Map<SystemStreamPartition, String> getOffsetsAfter(Map<SystemStreamPartition, String> systemStreamPartitionStringMap) {
+        return null;
+    }
+
+    @Override
+    public Map<String, SystemStreamMetadata> getSystemStreamMetadata(Set<String> strings) {
+        return null;
+    }
+
+    @Override
+    public void createChangelogStream(String s, int i) {
+
+    }
 }
