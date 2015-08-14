@@ -19,6 +19,7 @@
 package samza.examples.amq.system;
 
 import org.apache.samza.Partition;
+import org.apache.samza.SamzaException;
 import org.apache.samza.config.Config;
 import org.apache.samza.system.SystemAdmin;
 import org.apache.samza.system.SystemStreamMetadata;
@@ -48,9 +49,7 @@ public class ActiveMQSystemAdmin implements SystemAdmin {
         // mapping one queue to one partition
         // TODO if different ActiveMQ topology used, can we do a more clever partition?
         for (String queueName : queuesNames) {
-            System.out.println("****************************");
-            System.out.println(queueName);
-            System.out.println("****************************");
+            // using the queueName as the stream name
             Map<Partition, SystemStreamMetadata.SystemStreamPartitionMetadata> partitionMeta = new HashMap<Partition, SystemStreamMetadata.SystemStreamPartitionMetadata>();
             partitionMeta.put(new Partition(partition), emptyMetadata);
             metadata.put(queueName, new SystemStreamMetadata(queueName, partitionMeta));
@@ -61,6 +60,6 @@ public class ActiveMQSystemAdmin implements SystemAdmin {
 
     @Override
     public void createChangelogStream(String s, int i) {
-
+        throw new SamzaException("ChangeLog has not been implemented for ActiveMQ system.");
     }
 }
