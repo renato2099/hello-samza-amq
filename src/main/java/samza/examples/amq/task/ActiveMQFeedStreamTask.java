@@ -27,6 +27,9 @@ import org.apache.samza.task.StreamTask;
 import org.apache.samza.task.TaskCoordinator;
 import samza.examples.wikipedia.system.WikipediaFeed.WikipediaFeedEvent;
 
+import javax.jms.JMSException;
+import javax.jms.TextMessage;
+import java.util.HashMap;
 import java.util.Map;
 
 /**
@@ -38,7 +41,14 @@ public class ActiveMQFeedStreamTask implements StreamTask {
 
   @Override
   public void process(IncomingMessageEnvelope envelope, MessageCollector collector, TaskCoordinator coordinator) {
-    Map<String, Object> outgoingMap = WikipediaFeedEvent.toMap((WikipediaFeedEvent) envelope.getMessage());
+    final TextMessage msg = (TextMessage) envelope.getMessage();
+    Map<String, Object> outgoingMap = new HashMap<String, Object>(){{
+        try {
+            put(msg.getJMSMessageID(), msg.getText());
+        } catch (JMSException e) {
+            e.printStackTrace();
+        }
+    }};
     collector.send(new OutgoingMessageEnvelope(OUTPUT_STREAM, outgoingMap));
   }
 }

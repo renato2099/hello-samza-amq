@@ -117,14 +117,13 @@ public class ActiveMQListener implements MessageListener {
             if (message instanceof TextMessage) {
 
                 TextMessage txtMessage = (TextMessage) message;
-                IncomingMessageEnvelope env = new IncomingMessageEnvelope(this.ssp, txtMessage.getJMSMessageID(), txtMessage.getJMSMessageID(), txtMessage.getText());
-                System.out.println("Message received: " + txtMessage.getText());
-                System.out.println("Message id: " + txtMessage.getJMSMessageID());
+                IncomingMessageEnvelope env = new IncomingMessageEnvelope(this.ssp, txtMessage.getJMSMessageID(), txtMessage.getJMSMessageID(), txtMessage);
                 this.amqConsumer.putMessage(this.ssp, env);
             }
             //BytesMessage, MapMessage, ObjectMessage, StreamMessage
             else {
-                System.out.println("Invalid message received.");
+                LOG.error("Invalid ActiveMQ message type received.");
+                throw new SamzaException("ActiveMQ class not supported: " + message.getClass());
             }
         } catch (JMSException e) {
             LOG.error("Exception while using the ActiveMQListener:" + e);

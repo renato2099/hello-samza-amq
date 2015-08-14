@@ -25,13 +25,16 @@ import org.apache.samza.util.BlockingEnvelopeMap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.ArrayList;
+import java.util.List;
+
 /**
  * ActiveMQ consumer class
  */
 public class ActiveMQConsumer extends BlockingEnvelopeMap {
 
     private AmqAckMode ackMode;
-    private ActiveMQListener amqListener;
+    private List<ActiveMQListener> amqListeners;
 
     /**
      * Logger for the ActiveMQConsumer
@@ -52,13 +55,11 @@ public class ActiveMQConsumer extends BlockingEnvelopeMap {
 
     public ActiveMQConsumer(String aMode) {
         this.setAckMode(AmqAckMode.valueOf(aMode));
+        this.amqListeners = new ArrayList<ActiveMQListener>();
     }
 
     public void putMessage(SystemStreamPartition ssp, IncomingMessageEnvelope env) {
         try {
-            System.out.println("=========================");
-            System.out.println("Putting message. ssp:" + ssp + "\nenv:" + env);
-            System.out.println("=========================");
             put(ssp, env);
         } catch (InterruptedException e) {
             LOG.error("Something went wrong while updating Samza queue.");
@@ -69,18 +70,21 @@ public class ActiveMQConsumer extends BlockingEnvelopeMap {
     @Override
     public void register(SystemStreamPartition systemStreamPartition, String startingOffset) {
         super.register(systemStreamPartition, startingOffset);
-        amqListener = new ActiveMQListener(this, systemStreamPartition, getAckMode());
+        this.amqListeners.add(new ActiveMQListener(this, systemStreamPartition, getAckMode()));
     }
 
     @Override
     public void start() {
-        this.amqListener.run();
+        for (ActiveMQListener amqListener : amqListeners)
+            amqListener.run();
     }
 
     @Override
     public void stop() {
-        if (this.amqListener != null)
-            this.amqListener.stop();
+        if (!this.amqListeners.isEmpty())
+            for (ActiveMQListener amqListener : amqListeners)
+                if (amqListener != null)
+                    amqListener.stop();
     }
 
     public int getAckMode() {
