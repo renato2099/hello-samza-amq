@@ -19,35 +19,28 @@
 
 package samza.examples.amq.system;
 
-import org.apache.samza.SamzaException;
 import org.apache.samza.config.Config;
 import org.apache.samza.metrics.MetricsRegistry;
 import org.apache.samza.system.SystemAdmin;
 import org.apache.samza.system.SystemConsumer;
 import org.apache.samza.system.SystemFactory;
 import org.apache.samza.system.SystemProducer;
-import org.apache.samza.util.SinglePartitionWithoutOffsetsSystemAdmin;
-import samza.examples.wikipedia.system.WikipediaConsumer;
-import samza.examples.wikipedia.system.WikipediaFeed;
 
 /**
  * ActiveMQ factory
  */
 public class ActiveMQSystemFactory implements SystemFactory {
 
-  @Override
+  private static final String DEFAULT_JMS_ACK = "AUTO_ACKNOWLEDGE";
+
+    @Override
   public SystemAdmin getAdmin(String systemName, Config config) {
-      System.out.println("------------------------------------");
-      System.out.println(systemName);
-      System.out.println("------------------------------------");
-      System.out.println(config);
-      System.out.println("------------------------------------");
     return new ActiveMQSystemAdmin();
   }
 
   @Override
   public SystemConsumer getConsumer(String systemName, Config config, MetricsRegistry registry) {
-    return new ActiveMQConsumer();
+    return new ActiveMQConsumer(config.get("systems."+systemName+".jms.ack", DEFAULT_JMS_ACK));
   }
 
   @Override

@@ -31,7 +31,7 @@ import org.slf4j.LoggerFactory;
 public class ActiveMQConsumer extends BlockingEnvelopeMap {
 
     private static final String TCP_PROTOCOL = "tcp://";
-    private static final String Q_SEPARATOR = ".";
+    private static final String Q_SEPARATOR = "#";
     private String brokerUrl;
     private String queueName;
     private AmqAckMode ackMode;
@@ -62,21 +62,21 @@ public class ActiveMQConsumer extends BlockingEnvelopeMap {
     public void register(SystemStreamPartition systemStreamPartition, String startingOffset) {
         super.register(systemStreamPartition, startingOffset);
 
-        System.out.println("=========================");
-        System.out.println("ActiveMQConsumer" + systemStreamPartition);
         String [] brokerUrl = systemStreamPartition.getSystemStream().getStream().split(Q_SEPARATOR);
-        if (brokerUrl != null & brokerUrl.length > 1) {
-            this.setBrokerUrl(brokerUrl[1]);
-            this.setQueueName(brokerUrl[2]);
+        // checking if the broker-queue was passed in the right format
+        if (brokerUrl != null & brokerUrl.length == 2) {
+            this.setBrokerUrl(brokerUrl[0]);
+            this.setQueueName(brokerUrl[1]);
+
+            LOG.debug("Using broker: " + getBrokerUrl());
+            LOG.debug("Using queue: " + getQueueName());
+
             amqListener = new ActiveMQListener(getBrokerUrl(), getQueueName(), getAckMode());
         } else {
             LOG.error("ActiveMQ queue format: <server:port>.<queue>");
             LOG.error("Got: " + systemStreamPartition.getSystemStream().getStream());
             throw new SamzaException("ActiveMQ wrong queue format!");
         }
-        System.out.println("=========================");
-
-
     }
 
     @Override
@@ -86,7 +86,8 @@ public class ActiveMQConsumer extends BlockingEnvelopeMap {
 
     @Override
     public void stop() {
-        this.amqListener.stop();
+        if (this.amqListener != null)
+            this.amqListener.stop();
     }
 
     public String getBrokerUrl() {
@@ -94,7 +95,7 @@ public class ActiveMQConsumer extends BlockingEnvelopeMap {
     }
 
     public void setBrokerUrl(String brokerUrl) {
-        this.brokerUrl = brokerUrl;
+        this.brokerUrl = TCP_PROTOCOL + brokerUrl;
     }
 
     public String getQueueName() {
@@ -102,7 +103,7 @@ public class ActiveMQConsumer extends BlockingEnvelopeMap {
     }
 
     public void setQueueName(String queueName) {
-        this.queueName = TCP_PROTOCOL + queueName;
+        this.queueName = queueName;
     }
 
     public int getAckMode() {
