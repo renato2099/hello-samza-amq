@@ -19,7 +19,7 @@
 
 package samza.examples.amq.system;
 
-import org.apache.samza.SamzaException;
+import org.apache.samza.system.IncomingMessageEnvelope;
 import org.apache.samza.system.SystemStreamPartition;
 import org.apache.samza.util.BlockingEnvelopeMap;
 import org.slf4j.Logger;
@@ -30,10 +30,6 @@ import org.slf4j.LoggerFactory;
  */
 public class ActiveMQConsumer extends BlockingEnvelopeMap {
 
-    private static final String TCP_PROTOCOL = "tcp://";
-    private static final String Q_SEPARATOR = "#";
-    private String brokerUrl;
-    private String queueName;
     private AmqAckMode ackMode;
     private ActiveMQListener amqListener;
 
@@ -58,25 +54,22 @@ public class ActiveMQConsumer extends BlockingEnvelopeMap {
         this.setAckMode(AmqAckMode.valueOf(aMode));
     }
 
+    public void putMessage(SystemStreamPartition ssp, IncomingMessageEnvelope env) {
+        try {
+            System.out.println("=========================");
+            System.out.println("Putting message. ssp:" + ssp + "\nenv:" + env);
+            System.out.println("=========================");
+            put(ssp, env);
+        } catch (InterruptedException e) {
+            LOG.error("Something went wrong while updating Samza queue.");
+            e.printStackTrace();
+        }
+    }
+
     @Override
     public void register(SystemStreamPartition systemStreamPartition, String startingOffset) {
         super.register(systemStreamPartition, startingOffset);
-
-        String [] brokerUrl = systemStreamPartition.getSystemStream().getStream().split(Q_SEPARATOR);
-        // checking if the broker-queue was passed in the right format
-        if (brokerUrl != null & brokerUrl.length == 2) {
-            this.setBrokerUrl(brokerUrl[0]);
-            this.setQueueName(brokerUrl[1]);
-
-            LOG.debug("Using broker: " + getBrokerUrl());
-            LOG.debug("Using queue: " + getQueueName());
-
-            amqListener = new ActiveMQListener(getBrokerUrl(), getQueueName(), getAckMode());
-        } else {
-            LOG.error("ActiveMQ queue format: <server:port>.<queue>");
-            LOG.error("Got: " + systemStreamPartition.getSystemStream().getStream());
-            throw new SamzaException("ActiveMQ wrong queue format!");
-        }
+        amqListener = new ActiveMQListener(this, systemStreamPartition, getAckMode());
     }
 
     @Override
@@ -88,22 +81,6 @@ public class ActiveMQConsumer extends BlockingEnvelopeMap {
     public void stop() {
         if (this.amqListener != null)
             this.amqListener.stop();
-    }
-
-    public String getBrokerUrl() {
-        return brokerUrl;
-    }
-
-    public void setBrokerUrl(String brokerUrl) {
-        this.brokerUrl = TCP_PROTOCOL + brokerUrl;
-    }
-
-    public String getQueueName() {
-        return queueName;
-    }
-
-    public void setQueueName(String queueName) {
-        this.queueName = queueName;
     }
 
     public int getAckMode() {

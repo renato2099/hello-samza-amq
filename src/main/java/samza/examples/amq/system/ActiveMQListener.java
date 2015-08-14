@@ -29,12 +29,19 @@ import javax.jms.Session;
 import javax.jms.TextMessage;
 
 import org.apache.activemq.ActiveMQConnectionFactory;
+import org.apache.samza.SamzaException;
+import org.apache.samza.system.IncomingMessageEnvelope;
+import org.apache.samza.system.SystemStreamPartition;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
  */
 public class ActiveMQListener implements MessageListener {
+
+    private static final String TCP_PROTOCOL = "tcp://";
+    private static final String Q_SEPARATOR = "#";
+    private static final boolean DEFAULT_TRANSACTED_SESSION = false;
 
     /**
      * Logger for the ActiveMQConsumer
@@ -44,15 +51,33 @@ public class ActiveMQListener implements MessageListener {
     /**
      * ActiveMQ parameters
      */
+    private int ackMode;
     private Connection connection;
     private Session session;
     private MessageConsumer consumer;
     private String queueName;
-    private int ackMode;
-    private boolean DEFAULT_TRANSACTED_SESSION = false;
+    private SystemStreamPartition ssp;
+    private ActiveMQConsumer amqConsumer;
 
-    public ActiveMQListener(String brokerUrl, String qName, int aMode) {
-        ackMode = aMode;
+
+    public ActiveMQListener(ActiveMQConsumer aConsumer, SystemStreamPartition systemStreamPartition, int aMode) {
+        this.ssp = systemStreamPartition;
+        this.ackMode = aMode;
+        this.amqConsumer = aConsumer;
+
+        String brokerUrl;
+        String[] brokerQueue = ssp.getSystemStream().getStream().split(Q_SEPARATOR);
+        // checking if the broker-queue was passed in the right format
+        if (brokerQueue != null & brokerQueue.length == 2) {
+            LOG.debug("Broker: " + brokerQueue[0] + "\tQueue: " + brokerQueue[1]);
+            brokerUrl = TCP_PROTOCOL + brokerQueue[0];
+            this.queueName = brokerQueue[1];
+        } else {
+            LOG.error("ActiveMQ queue format: <server:port>.<queue>");
+            LOG.error("Got: " + ssp.getSystemStream().getStream());
+            throw new SamzaException("ActiveMQ wrong queue format!");
+        }
+        // creating a connection
         try {
             ConnectionFactory amqConFactory = new ActiveMQConnectionFactory(brokerUrl);
             connection = amqConFactory.createConnection();
@@ -60,11 +85,11 @@ public class ActiveMQListener implements MessageListener {
             LOG.error("Exception while creating a connection to " + brokerUrl);
             e.printStackTrace();
         }
-        queueName = qName;
+
     }
 
     public void stop() {
-        try{
+        try {
             this.consumer.close();
             this.session.close();
             this.connection.close();
@@ -74,41 +99,34 @@ public class ActiveMQListener implements MessageListener {
         }
     }
 
-    public void run()
-    {
-        try
-        {
+    public void run() {
+        try {
             connection.start();
             session = connection.createSession(DEFAULT_TRANSACTED_SESSION, ackMode);
             Destination destination = session.createQueue(queueName);
             consumer = session.createConsumer(destination);
             consumer.setMessageListener(this);
-        }
-        catch (Exception e)
-        {
+        } catch (Exception e) {
             LOG.error("Exception while using the ActiveMQListener:" + e);
             e.printStackTrace();
         }
     }
 
-    public void onMessage(Message message)
-    {
-        try
-        {
-            if (message instanceof TextMessage)
-            {
-                TextMessage txtMessage = (TextMessage)message;
+    public void onMessage(Message message) {
+        try {
+            if (message instanceof TextMessage) {
+
+                TextMessage txtMessage = (TextMessage) message;
+                IncomingMessageEnvelope env = new IncomingMessageEnvelope(this.ssp, txtMessage.getJMSMessageID(), txtMessage.getJMSMessageID(), txtMessage.getText());
                 System.out.println("Message received: " + txtMessage.getText());
                 System.out.println("Message id: " + txtMessage.getJMSMessageID());
+                this.amqConsumer.putMessage(this.ssp, env);
             }
             //BytesMessage, MapMessage, ObjectMessage, StreamMessage
-            else
-            {
+            else {
                 System.out.println("Invalid message received.");
             }
-        }
-        catch (JMSException e)
-        {
+        } catch (JMSException e) {
             LOG.error("Exception while using the ActiveMQListener:" + e);
             e.printStackTrace();
         }
