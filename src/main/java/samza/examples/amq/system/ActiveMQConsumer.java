@@ -28,6 +28,8 @@ import org.slf4j.LoggerFactory;
 import java.util.ArrayList;
 import java.util.List;
 
+import static samza.examples.amq.system.ActiveMQConstants.*;
+
 /**
  * ActiveMQ consumer class
  */
@@ -40,18 +42,6 @@ public class ActiveMQConsumer extends BlockingEnvelopeMap {
      * Logger for the ActiveMQConsumer
      */
     private static final Logger LOG = LoggerFactory.getLogger(ActiveMQConsumer.class);
-
-    /**
-     * javax.jms.Session acknowledgement types
-     */
-    public enum AmqAckMode {
-        AUTO_ACKNOWLEDGE(1), CLIENT_ACKNOWLEDGE(2), DUPS_OK_ACKNOWLEDGE(3);
-
-        int value;
-        AmqAckMode(int val) {
-            value = val;
-        }
-    }
 
     public ActiveMQConsumer(String aMode) {
         this.setAckMode(AmqAckMode.valueOf(aMode));

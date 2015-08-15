@@ -35,13 +35,11 @@ import org.apache.samza.system.SystemStreamPartition;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import static samza.examples.amq.system.ActiveMQConstants.*;
+
 /**
  */
 public class ActiveMQListener implements MessageListener {
-
-    private static final String TCP_PROTOCOL = "tcp://";
-    private static final String Q_SEPARATOR = "#";
-    private static final boolean DEFAULT_TRANSACTED_SESSION = false;
 
     /**
      * Logger for the ActiveMQConsumer
@@ -66,11 +64,11 @@ public class ActiveMQListener implements MessageListener {
         this.amqConsumer = aConsumer;
 
         String brokerUrl;
-        String[] brokerQueue = ssp.getSystemStream().getStream().split(Q_SEPARATOR);
+        String[] brokerQueue = ssp.getSystemStream().getStream().split(DEFAULT_Q_SEPARATOR);
         // checking if the broker-queue was passed in the right format
         if (brokerQueue != null & brokerQueue.length == 2) {
             LOG.debug("Broker: " + brokerQueue[0] + "\tQueue: " + brokerQueue[1]);
-            brokerUrl = TCP_PROTOCOL + brokerQueue[0];
+            brokerUrl = DEFAULT_TCP_PROTOCOL + brokerQueue[0];
             this.queueName = brokerQueue[1];
         } else {
             LOG.error("ActiveMQ queue format: <server:port>.<queue>");

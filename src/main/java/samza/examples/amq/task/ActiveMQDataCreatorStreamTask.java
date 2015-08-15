@@ -34,11 +34,11 @@ public class ActiveMQDataCreatorStreamTask implements StreamTask {
     /**
      * ActiveMQ endpoint where data will be written to.
      */
-    private static final SystemStream OUTPUT_STREAM = new SystemStream("amq", "queue2");
+    private static final SystemStream OUTPUT_STREAM = new SystemStream("amq", "queue3");
 
     @Override
     public void process(IncomingMessageEnvelope envelope, MessageCollector collector, TaskCoordinator taskCoordinator) throws Exception {
-        String msg = new String((byte[])envelope.getMessage(), Charset.forName("UTF-8")).replace("Data", "Pata");
+        String msg = new String((byte[])envelope.getMessage(), Charset.forName("UTF-8")).replace("Me", "Ma");
         collector.send(new OutgoingMessageEnvelope(OUTPUT_STREAM, envelope.getKey(), msg.getBytes()));
     }
 }
