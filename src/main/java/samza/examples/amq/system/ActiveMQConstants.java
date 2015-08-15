@@ -48,5 +48,5 @@ public class ActiveMQConstants {
     /**
      * Default transacted session.
      */
-    public static final boolean DEFAULT_TRANSACTED_SESSION = false;
+    public static final boolean DEFAULT_TRANSAC_SESSION = false;
 }

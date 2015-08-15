@@ -100,7 +100,7 @@ public class ActiveMQListener implements MessageListener {
     public void run() {
         try {
             connection.start();
-            session = connection.createSession(DEFAULT_TRANSACTED_SESSION, ackMode);
+            session = connection.createSession(DEFAULT_TRANSAC_SESSION, ackMode);
             Destination destination = session.createQueue(queueName);
             consumer = session.createConsumer(destination);
             consumer.setMessageListener(this);

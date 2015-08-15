@@ -29,6 +29,7 @@ import javax.jms.*;
 import java.util.ArrayList;
 import java.util.List;
 
+import static samza.examples.amq.system.ActiveMQConstants.*;
 import static samza.examples.amq.system.ActiveMQConstants.DEFAULT_TCP_PROTOCOL;
 
 /**
@@ -40,21 +41,22 @@ public class ActiveMQProducer implements SystemProducer {
      */
     private static final Logger LOG = LoggerFactory.getLogger(ActiveMQProducer.class);
 
-    private ConnectionFactory factory;
     private Connection connection;
     private Session session;
     /** Enforcing a 1:1 mapping between queues and msg producers. */
     private List<Destination> destQueues;
     private List<MessageProducer> msgProducers;
+    private boolean tranSession;
+    private AmqAckMode ackMode;
 
-    public ActiveMQProducer(String brokUrl, String user, String psw) {
-        this.factory = new ActiveMQConnectionFactory(DEFAULT_TCP_PROTOCOL + brokUrl);
+    public ActiveMQProducer(String brokUrl, String user, String psw, String aMode, boolean tSession) {
+        ActiveMQConnectionFactory factory = new ActiveMQConnectionFactory(DEFAULT_TCP_PROTOCOL + brokUrl);
         this.destQueues = new ArrayList<Destination>();
         this.msgProducers = new ArrayList<MessageProducer>();
+        this.tranSession = tSession;
+        this.ackMode = AmqAckMode.valueOf(aMode);
         try {
-            this.connection = this.factory.createConnection(user, psw);
-            connection.start();
-            session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+            this.connection = factory.createConnection(user, psw);
         } catch (JMSException e) {
             LOG.error("Error while connecting to " + brokUrl);
             e.printStackTrace();
@@ -65,6 +67,7 @@ public class ActiveMQProducer implements SystemProducer {
     public void start() {
         try {
             this.connection.start();
+            session = connection.createSession(tranSession, ackMode.value);
         } catch (JMSException e) {
             LOG.error("Error starting a connection.");
             e.printStackTrace();

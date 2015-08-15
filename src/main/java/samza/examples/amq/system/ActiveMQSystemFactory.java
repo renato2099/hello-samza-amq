@@ -26,25 +26,32 @@ import org.apache.samza.system.SystemConsumer;
 import org.apache.samza.system.SystemFactory;
 import org.apache.samza.system.SystemProducer;
 
+import static samza.examples.amq.system.ActiveMQConstants.DEFAULT_TRANSAC_SESSION;
+
 /**
  * ActiveMQ factory
  */
 public class ActiveMQSystemFactory implements SystemFactory {
 
-  private static final String DEFAULT_JMS_ACK = "AUTO_ACKNOWLEDGE";
+    private static final String DEFAULT_JMS_ACK = "AUTO_ACKNOWLEDGE";
 
     @Override
-  public SystemAdmin getAdmin(String systemName, Config config) {
-    return new ActiveMQSystemAdmin();
-  }
+    public SystemAdmin getAdmin(String systemName, Config config) {
+        return new ActiveMQSystemAdmin();
+    }
 
-  @Override
-  public SystemConsumer getConsumer(String systemName, Config config, MetricsRegistry registry) {
-    return new ActiveMQConsumer(config.get("systems."+systemName+".jms.ack", DEFAULT_JMS_ACK));
-  }
+    @Override
+    public SystemConsumer getConsumer(String systemName, Config config, MetricsRegistry registry) {
+        return new ActiveMQConsumer(config.get("systems." + systemName + ".jms.ack", DEFAULT_JMS_ACK));
+    }
 
-  @Override
-  public SystemProducer getProducer(String systemName, Config config, MetricsRegistry registry) {
-    return new ActiveMQProducer();
-  }
+    @Override
+    public SystemProducer getProducer(String systemName, Config config, MetricsRegistry registry) {
+        String brokerUrl = config.get("systems." + systemName + ".broker", "");
+        String ackMode = config.get("systems." + systemName + ".jms.ack", DEFAULT_JMS_ACK);
+        String usr = config.get("systems." + systemName + ".usr", "");
+        String psw = config.get("systems." + systemName + ".psw", "");
+        boolean tSession = config.getBoolean("systems." + systemName + "transacted_session", DEFAULT_TRANSAC_SESSION);
+        return new ActiveMQProducer(brokerUrl, usr, psw, ackMode, tSession);
+    }
 }
