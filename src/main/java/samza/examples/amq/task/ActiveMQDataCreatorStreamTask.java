@@ -25,6 +25,7 @@ import org.apache.samza.task.MessageCollector;
 import org.apache.samza.task.StreamTask;
 import org.apache.samza.task.TaskCoordinator;
 
+import javax.jms.TextMessage;
 import java.nio.charset.Charset;
 
 /**
@@ -38,7 +39,8 @@ public class ActiveMQDataCreatorStreamTask implements StreamTask {
 
     @Override
     public void process(IncomingMessageEnvelope envelope, MessageCollector collector, TaskCoordinator taskCoordinator) throws Exception {
-        String msg = new String((byte[])envelope.getMessage(), Charset.forName("UTF-8")).replace("Me", "Ma");
+        final TextMessage txtMsg = (TextMessage) envelope.getMessage();
+        String msg = txtMsg.getText().replace("Me", "Ma");
         collector.send(new OutgoingMessageEnvelope(OUTPUT_STREAM, envelope.getKey(), msg.getBytes()));
     }
 }

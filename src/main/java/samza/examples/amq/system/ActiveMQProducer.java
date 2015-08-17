@@ -25,11 +25,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.jms.*;
+import java.util.HashMap;
+import java.util.Map;
 
-import java.util.ArrayList;
-import java.util.List;
-
-import static samza.examples.amq.system.ActiveMQConstants.*;
+import static samza.examples.amq.system.ActiveMQConstants.AmqAckMode;
 import static samza.examples.amq.system.ActiveMQConstants.DEFAULT_TCP_PROTOCOL;
 
 /**
@@ -43,16 +42,16 @@ public class ActiveMQProducer implements SystemProducer {
 
     private Connection connection;
     private Session session;
-    /** Enforcing a 1:1 mapping between queues and msg producers. */
-    private List<Destination> destQueues;
-    private List<MessageProducer> msgProducers;
+    /**
+     * Enforcing a 1:1 mapping between queues and msg producers.
+     */
+    private Map<String, MessageProducer> msgProducers;
     private boolean tranSession;
     private AmqAckMode ackMode;
 
     public ActiveMQProducer(String brokUrl, String user, String psw, String aMode, boolean tSession) {
         ActiveMQConnectionFactory factory = new ActiveMQConnectionFactory(DEFAULT_TCP_PROTOCOL + brokUrl);
-        this.destQueues = new ArrayList<Destination>();
-        this.msgProducers = new ArrayList<MessageProducer>();
+        this.msgProducers = new HashMap<String, MessageProducer>();
         this.tranSession = tSession;
         this.ackMode = AmqAckMode.valueOf(aMode);
         try {
@@ -65,48 +64,56 @@ public class ActiveMQProducer implements SystemProducer {
 
     @Override
     public void start() {
-        try {
-            this.connection.start();
-            session = connection.createSession(tranSession, ackMode.value);
-        } catch (JMSException e) {
-            LOG.error("Error starting a connection.");
-            e.printStackTrace();
-        }
+        // Nothing to do
     }
 
     @Override
     public void stop() {
         try {
-            this.session.close();
-            this.connection.stop();
+            if (this.session != null)
+                this.session.close();
+            if (this.connection != null)
+                this.connection.stop();
         } catch (JMSException e) {
+            LOG.error("Error while stopping the session/connection.");
             e.printStackTrace();
         }
     }
 
     @Override
-    public void register(String queueName) {
+    public void register(String stream) {
         try {
-            Destination d = session.createQueue(queueName);
-            this.destQueues.add(d);
-            System.out.println("Destination Queue created.");
-            this.msgProducers.add(session.createProducer(d));
+            this.connection.start();
+            this.session = connection.createSession(tranSession, ackMode.value);
         } catch (JMSException e) {
+            LOG.error(String.format("Error while registering a stream %s.", stream));
             e.printStackTrace();
         }
     }
 
     @Override
-    public void send(String s, OutgoingMessageEnvelope outgoingMessageEnvelope) {
-        System.out.println("=======================================");
-        System.out.println(outgoingMessageEnvelope.getSystemStream());
-        System.out.println("=======================================");
+    public void send(String source, OutgoingMessageEnvelope outgoingMessageEnvelope) {
+        String queueName = outgoingMessageEnvelope.getSystemStream().getStream();
+        String strMsg = new String((byte[]) outgoingMessageEnvelope.getMessage());
+        try {
+            if (this.msgProducers.get(queueName) == null) {
+                Destination d = session.createQueue(queueName);
+                this.msgProducers.put(queueName, session.createProducer(d));
+            }
+            MessageProducer producer = this.msgProducers.get(queueName);
+            // TODO add support for message types
+            producer.send(session.createTextMessage(strMsg));
+        } catch (JMSException e) {
+            LOG.error(String.format("Error while sending message %s.", strMsg));
+            e.printStackTrace();
+        }
     }
 
     @Override
     public void flush(String s) {
         try {
-            this.session.commit();
+            if (tranSession)
+                this.session.commit();
         } catch (JMSException e) {
             e.printStackTrace();
         }
